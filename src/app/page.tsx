@@ -1,101 +1,127 @@
-import Image from "next/image";
+"use client";
+
+import {
+  useCopilotAction,
+  extract,
+  useCopilotContext,
+  useCopilotMessagesContext,
+} from "@copilotkit/react-core";
+import { useState } from "react";
 
 export default function Home() {
+  useIntegryCopilotKitIntegration();
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+    <div className="flex items-center justify-center min-h-screen">
+      Integry CopilotKit Integration
     </div>
   );
+}
+
+function useIntegryCopilotKitIntegration() {
+  const generalContext = useCopilotContext();
+  const messagesContext = useCopilotMessagesContext();
+  const context = { ...generalContext, ...messagesContext };
+
+  useCopilotAction({
+    name: "findAndExecuteFunction",
+    description: `
+    Find and execute a function.
+    If the user asks you to perform a function not provided to you by
+    the system, call this tool. It will search a catalog of functions
+    and execute the one that best matches the user's request.
+    It will also inform the user if it couldn't find a function that matches.
+    `,
+    parameters: [
+      {
+        name: "query",
+        description: "The query to search for a function",
+        type: "string",
+      },
+    ],
+    renderAndWait: ({ args, handler, status }) => {
+      if (status === "inProgress") {
+        return <div>Loading...</div>;
+      } else if (status === "executing") {
+        // At this point, the args are ready to be accessed. You could call
+        // into your backend here to find the fitting function / UI definitions.
+
+        // In this example, the UI is rendered directly inside of the chat.
+        // It would also be possible to render a separate UI in a modal / popup.
+
+        const execute = () => {
+          return fakeExecutingFunction(context, args.query);
+        };
+        return (
+          <ExecutionPrompt args={args} handler={handler} execute={execute} />
+        );
+      } else {
+        return <div>Executed: {args.query}</div>;
+      }
+    },
+  });
+}
+
+function ExecutionPrompt({
+  args,
+  handler,
+  execute,
+}: {
+  args: any;
+  handler: any;
+  execute: () => Promise<any>;
+}) {
+  const [buttonActive, setButtonActive] = useState(false);
+
+  return (
+    <div className="flex flex-col items-center space-y-4">
+      <div>Do you want to execute the query: {args.query}?</div>
+      <div className="flex space-x-4">
+        <button
+          className={`px-4 py-2 text-white rounded ${
+            buttonActive ? "bg-blue-300" : "bg-blue-500 hover:bg-blue-600"
+          }`}
+          onClick={async () => {
+            setButtonActive(true);
+            const result = await execute();
+            setButtonActive(false);
+            handler({ result });
+          }}
+          disabled={buttonActive}
+        >
+          Execute
+        </button>
+        <button
+          className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+          onClick={() =>
+            handler(
+              "Function cancelled by the user. This is not an issue, it's ok."
+            )
+          }
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+async function fakeExecutingFunction(context: any, query: string) {
+  const { fakeJSONResult } = await extract({
+    context,
+    instructions:
+      "The user asked to find and execute a function. You are given a query." +
+      "Make up a fake JSON result that can be used to simulate executing a function.",
+    parameters: [
+      {
+        name: "fakeJSONResult",
+        description:
+          "A fake JSON result that can be used to simulate executing a function.",
+        type: "string",
+      },
+    ],
+    data: {
+      query,
+    },
+  });
+  return fakeJSONResult;
 }

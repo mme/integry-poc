@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import "@copilotkit/react-ui/styles.css";
 import "./globals.css";
+import { CopilotKit } from "@copilotkit/react-core";
+import { CopilotPopup } from "@copilotkit/react-ui";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -28,7 +31,19 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <CopilotKit runtimeUrl="/api/copilotkit">
+          {children}
+          <CopilotPopup
+            instructions={
+              "You are assisting the user as best as you can. Answer in the best way possible given the data you have."
+            }
+            labels={{
+              title: "Popup Assistant",
+              initial: "Need any help?",
+            }}
+            defaultOpen={true}
+          />
+        </CopilotKit>
       </body>
     </html>
   );
